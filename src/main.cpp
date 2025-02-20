@@ -1,6 +1,52 @@
 #include <Arduino.h>
 #include <EspSimHub.h>
 
+#define INCLUDE_BLE_GAMEPAD				//{"Name":"INCLUDE_BLE_GAMEPAD","Type":"autodefine","Condition":"[ENABLE_BLE_GAMEPAD]>0"}
+
+#ifdef INCLUDE_BLE_GAMEPAD			
+#include <BleGamepad.h>
+
+// Levas
+#define X_BUTTON 4           // Botón A
+#define CIRCLE_BUTTON 5      // Botón B
+#define TRIANGLE_BUTTON 6   // Botón Y
+#define SQUARE_BUTTON 7     // Botón X
+
+// Número de botones individuales
+#define NUM_BUTTONS 4
+int buttonsPins[NUM_BUTTONS] = {X_BUTTON, CIRCLE_BUTTON, TRIANGLE_BUTTON, SQUARE_BUTTON};
+int PCGamepadButtons[NUM_BUTTONS] = {1, 2, 4, 3}; // Correspondencia de botones individuales
+
+// Definición de la matriz de botones (5x2) Botones Individuales Volante
+#define NUM_ROWS 5
+#define NUM_COLS 2
+int rowsPins[NUM_ROWS] = {15, 16, 17, 18, 12}; // Pines de las filas
+int colsPins[NUM_COLS] = {11, 10};             // Pines de las columnas
+
+// Correspondencia con botones del gamepad
+int buttonMapping[NUM_ROWS][NUM_COLS] = {
+    {5, 6},
+    {7, 8},
+    {9, 10},
+    {11, 12},
+    {13, 14}
+};
+
+// Configuración del BLE Gamepad
+BleGamepad bleGamepad("GNK RS V2", "Gonky Racing");
+BleGamepadConfiguration bleGamepadConfig;
+
+// Función para leer valores filtrados de pines analógicos
+uint16_t readFilteredAnalog(int pin, int samples = 10) {
+    uint32_t sum = 0;
+    for (int i = 0; i < samples; i++) {
+        sum += analogRead(pin);
+        delay(2); // Pequeño retraso entre lecturas para estabilidad
+    }
+    return sum / samples;
+}
+
+#endif /// FINAL DE LA GONFIGURACION INCIAL BLE GAMEPAD
 
 /**
  * Enable ESP-NOW or WiFi or use Serial
@@ -54,11 +100,11 @@ FullLoopbackStream incomingStream;
 
 
 // Title of the device
-#define DEVICE_NAME "Gnk RS V2" //{"Group":"General","Name":"DEVICE_NAME","Title":"Device name,\r\n make sure to use a unique name when using multiple arduinos","DefaultValue":"SimHub Dash","Type":"string","Template":"#define DEVICE_NAME \"{0}\""}
+#define DEVICE_NAME "GNK RS V2" //{"Group":"General","Name":"DEVICE_NAME","Title":"Device name,\r\n make sure to use a unique name when using multiple arduinos","DefaultValue":"SimHub Dash","Type":"string","Template":"#define DEVICE_NAME \"{0}\""}
 
 // Known working features:
-//  
-#define INCLUDE_RGB_LEDS_NEOPIXELBUS        // use this instead of INCLUDE_WS2812B
+
+//#define INCLUDE_RGB_LEDS_NEOPIXELBUS        // use this instead of INCLUDE_WS2812B
 #define INCLUDE_WS2812B                     // consider using INCLUDE_RGB_LEDS_NEOPIXELBUS {"Name":"INCLUDE_WS2812B","Type":"autodefine","Condition":"[WS2812B_RGBLEDCOUNT]>0"}
 //#define INCLUDE_WS2812B_MATRIX              //{"Name":"INCLUDE_WS2812B_MATRIX","Type":"autodefine","Condition":"[WS2812B_MATRIX_ENABLED]>0"}
 //#define INCLUDE_BUTTONS                     //{"Name":"INCLUDE_BUTTONS","Type":"autodefine","Condition":"[ENABLED_BUTTONS_COUNT]>0","IsInput":true}
@@ -326,10 +372,10 @@ SHMatrixHT16H33SingleColor shMatrixHT16H33SingleColor;
 // -------------------------------------------------------------------------------------------------------
 // WS2812b chained RGBLEDS count
 // 0 disabled, > 0 enabled
-#define WS2812B_RGBLEDCOUNT 0        //{"Group":"WS2812B RGB Leds","Name":"WS2812B_RGBLEDCOUNT","Title":"WS2812B RGB leds count","DefaultValue":"0","Type":"int","Max":150}
+#define WS2812B_RGBLEDCOUNT 1        //{"Group":"WS2812B RGB Leds","Name":"WS2812B_RGBLEDCOUNT","Title":"WS2812B RGB leds count","DefaultValue":"0","Type":"int","Max":150}
 #ifdef INCLUDE_WS2812B
 
-#define WS2812B_DATAPIN 33  		 //{"Name":"WS2812B_DATAPIN","Title":"Data (DIN) digital pin number","DefaultValue":"6","Type":"pin;WS2812B LEDS DATA","Condition":"WS2812B_RGBLEDCOUNT>0"}
+#define WS2812B_DATAPIN 2  		 //{"Name":"WS2812B_DATAPIN","Title":"Data (DIN) digital pin number","DefaultValue":"6","Type":"pin;WS2812B LEDS DATA","Condition":"WS2812B_RGBLEDCOUNT>0"}
 #define WS2812B_RGBENCODING 0        //{"Name":"WS2812B_RGBENCODING","Title":"WS2812B RGB encoding\r\nSet to 0 for GRB, 1 for RGB encoding, 2 for BRG encoding","DefaultValue":"0","Type":"list","Condition":"WS2812B_RGBLEDCOUNT>0","ListValues":"0,GRB encoding;1,RGB encoding;2,BRG encoding"}
 #define WS2812B_RIGHTTOLEFT 0        //{"Name":"WS2812B_RIGHTTOLEFT","Title":"Reverse led order ","DefaultValue":"0","Type":"bool","Condition":"WS2812B_RGBLEDCOUNT>0"}
 #define WS2812B_TESTMODE 1           //{"Name":"WS2812B_TESTMODE","Title":"TESTING MODE : Light up all configured leds (in red color) at arduino startup\r\nIt will clear after simhub connection","DefaultValue":"0","Type":"bool","Condition":"WS2812B_RGBLEDCOUNT>0"}
@@ -887,7 +933,7 @@ SHShakeitPWMFans shShakeitPWMFans;
 // https://github.com/zegreatclan/SimHub/wiki/Arduino-SSD1306-0.96''-Oled-I2C
 // --------------------------------------------------------------------------------------------------------
 
-#define ENABLED_OLEDLCD 0 //{"Group":"Oled GLCD","Name":"ENABLED_OLEDLCD","Title":"OLED LCD enabled","DefaultValue":"0","Type":"bool","Pins":"328:18,OLED LCD SDA;19,OLED LCD SCK|mega:20,OLED LCD SDA;21,OLED LCD SCK|micro:2,OLED LCD SDA;3,OLED LCD SCK"}
+#define ENABLED_OLEDLCD 1 //{"Group":"Oled GLCD","Name":"ENABLED_OLEDLCD","Title":"OLED LCD enabled","DefaultValue":"0","Type":"bool","Pins":"328:18,OLED LCD SDA;19,OLED LCD SCK|mega:20,OLED LCD SDA;21,OLED LCD SCK|micro:2,OLED LCD SDA;3,OLED LCD SCK"}
 #ifdef INCLUDE_OLED
 #define ENABLED_NOKIALCD 0
 #include "SHGLCD_I2COLED.h"
@@ -1214,6 +1260,43 @@ void buttonMatrixStatusChanged(int buttonId, byte Status) {
 
 void setup()
 {
+
+
+
+////BLE GAMEPAD ////
+	#ifdef INCLUDE_BLE_GAMEPAD	
+
+		delay(20);
+		Serial.begin(115200);
+	
+		// Configuración de pines para botones individuales
+		for (int i = 0; i < NUM_BUTTONS; i++) {
+			pinMode(buttonsPins[i], INPUT_PULLUP);
+		}
+	
+		// Configuración de pines para la matriz de botones
+		for (int i = 0; i < NUM_ROWS; i++) {
+			pinMode(rowsPins[i], OUTPUT);
+			digitalWrite(rowsPins[i], HIGH); // Mantener filas desactivadas
+		}
+		for (int i = 0; i < NUM_COLS; i++) {
+			pinMode(colsPins[i], INPUT_PULLUP); // Columnas como entradas con pull-up
+		}
+	 
+	
+		// Configuración del BLE Gamepad
+		bleGamepadConfig.setAutoReport(false);
+		bleGamepadConfig.setControllerType(CONTROLLER_TYPE_GAMEPAD);
+		bleGamepadConfig.setVid(0xe502);
+		bleGamepadConfig.setPid(0xabcd);
+		bleGamepadConfig.setHatSwitchCount(0); // No usamos hat-switches
+		bleGamepad.begin(&bleGamepadConfig);
+	
+	
+	#endif
+
+///////ble gamepad ////
+
 #if CONNECTION_TYPE != SERIAL
 #if DEBUG_BRIDGE
 	Serial.begin(115200);
@@ -1425,6 +1508,51 @@ unsigned long lastSerialActivity = 0;
 
 
 void loop() {
+
+	#ifdef INCLUDE_BLE_GAMDEPAD
+
+
+	if (bleGamepad.isConnected()) {
+        // Lectura de botones individuales
+        for (int i = 0; i < NUM_BUTTONS; i++) {
+            if (!digitalRead(buttonsPins[i])) {
+                bleGamepad.press(PCGamepadButtons[i]);
+            } else {
+                bleGamepad.release(PCGamepadButtons[i]);
+            }
+        }
+
+        // Lectura de la matriz de botones
+        for (int row = 0; row < NUM_ROWS; row++) {
+            digitalWrite(rowsPins[row], LOW); // Activar fila actual
+            delayMicroseconds(50); // Pequeño retraso para estabilidad
+
+            for (int col = 0; col < NUM_COLS; col++) {
+                int buttonID = buttonMapping[row][col];
+                if (!digitalRead(colsPins[col])) {
+                    bleGamepad.press(buttonID); // Botón presionado
+                } else {
+                    bleGamepad.release(buttonID); // Botón liberado
+                }
+            }
+
+            digitalWrite(rowsPins[row], HIGH); // Desactivar fila actual
+        }
+
+        // Enviar reporte BLE
+        bleGamepad.sendReport();
+
+        // Retraso breve para evitar saturación BLE
+        delay(10);
+    }
+
+
+
+
+	
+	#endif
+
+
 #if CONNECTION_TYPE != SERIAL
 	ECrowneDataProxy::loop();
 #endif
